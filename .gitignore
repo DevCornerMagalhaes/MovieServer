@@ -5,8 +5,10 @@
 # Environment variables (contains passwords and secrets)
 .env
 
-# Movie files (large binary files)
-movies/
+# Movie files (large binary files - but allow .gitkeep and documentation)
+movies/*
+!movies/.gitkeep
+!movies/README.md
 *.mp4
 *.mkv
 *.avi
@@ -36,6 +38,7 @@ bld/
 # Visual Studio 2015/2017 cache/options directory
 .vs/
 .vscode/settings.json
+.vscode/extensions.json
 
 # MSTest test Results
 [Tt]est[Rr]esult*/

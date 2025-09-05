@@ -1,0 +1,22 @@
+# Movies Directory
+
+Place your movie files here. The following formats are supported:
+
+- MP4 (H.264 + AAC) - Direct streaming, no transcoding needed
+- MKV (any codec) - Smart transcoding with audio optimization  
+- AVI, MOV, WMV - Full transcoding for compatibility
+- HEVC/H.265 - Automatic transcoding for web browsers
+
+Example structure:
+```
+movies/
+├── Action/
+│   ├── Movie1.mp4
+│   └── Movie2.mkv
+├── Comedy/
+│   └── Funny_Movie.avi
+└── Drama/
+    └── Serious_Film.mov
+```
+
+Note: Movie files are ignored by git (.gitignore) to prevent large binary files from being committed to the repository.
