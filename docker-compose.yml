@@ -1,0 +1,80 @@
+services:
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"   # RabbitMQ main port
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672" # RabbitMQ management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-movieserver_user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-DevPassword_RabbitMQ_123!}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  transcoding:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.transcoding
+    ports:
+      - "${TRANSCODING_PORT:-5001}:5001"
+    volumes:
+      - ${MOVIE_FOLDER:-./movies}:/app/movies
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - TRANSCODING_PORT=${TRANSCODING_PORT:-5001}
+      - FFMPEG_PRESET=${FFMPEG_PRESET:-veryfast}
+      - TRANSCODING_QUALITY=${TRANSCODING_QUALITY:-23}
+      - MAX_CONCURRENT_TRANSCODES=${MAX_CONCURRENT_TRANSCODES:-2}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    ports:
+      - "${BACKEND_PORT:-5000}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      MOVIE_FOLDER: /app/movies
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-DevSecret_JWT_Key}
+      APP_ADMIN_USERNAME: ${APP_ADMIN_USERNAME:-admin}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-DevPassword_Admin_456!}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_DEFAULT_USER:-movieserver_user}
+      RABBITMQ_PASS: ${RABBITMQ_DEFAULT_PASS:-DevPassword_RabbitMQ_123!}
+      LOG_LEVEL: ${LOG_LEVEL:-Information}
+      RATE_LIMIT_REQUESTS_PER_MINUTE: ${RATE_LIMIT_REQUESTS_PER_MINUTE:-100}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      transcoding:
+        condition: service_healthy
+    volumes:
+      - ${MOVIE_FOLDER:-./movies}:/app/movies
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/movies"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+    restart: unless-stopped
+
+volumes:
+  rabbitmq_data:

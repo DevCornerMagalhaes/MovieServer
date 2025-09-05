@@ -1,0 +1,23 @@
+# Transcoding Service Dockerfile
+FROM node:20-alpine
+
+# Install FFmpeg
+RUN apk add --no-cache ffmpeg
+
+# Set working directory
+WORKDIR /app
+
+# Create package.json for the transcoding service
+RUN echo '{"name": "transcoding-service", "version": "1.0.0", "main": "transcoding-service.js", "dependencies": {"fluent-ffmpeg": "^2.1.2", "express": "^4.18.2"}}' > package.json
+
+# Install dependencies
+RUN npm install
+
+# Copy the transcoding service
+COPY transcoding-service.js .
+
+# Expose port
+EXPOSE 5001
+
+# Start the service
+CMD ["node", "transcoding-service.js"]
